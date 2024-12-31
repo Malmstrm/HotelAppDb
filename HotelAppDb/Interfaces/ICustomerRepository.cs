@@ -1,6 +1,6 @@
 ﻿using HotelBookingApp.Model;
 
-namespace HotelBookingApp.Interface
+namespace HotelAppDb.Interfaces
 {
     public interface ICustomerRepository
     {

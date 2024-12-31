@@ -1,7 +1,7 @@
 ﻿using HotelBookingApp.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace HotelBookingApp.Data
+namespace HotelAppDb.Data
 {
     public class ApplicationDbContext : DbContext
     {

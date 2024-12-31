@@ -1,9 +1,12 @@
 ﻿using Autofac;
-using HotelBookingApp.Data;
-using HotelBookingApp.Interface;
+using HotelAppDb.Service;
+using HotelAppDb.Repositories;
+using HotelAppDb.Interfaces;
+using HotelAppDb.Data;
+using HotelAppDb.Controllers;
 using Microsoft.EntityFrameworkCore;
 
-namespace HotelBookingApp.AppModules
+namespace HotelAppDb.AppModules
 {
     public class AppModule : Module
     {
@@ -20,23 +23,23 @@ namespace HotelBookingApp.AppModules
             // Registrera DataInitializer
             builder.RegisterType<DataInitializer>().AsSelf().SingleInstance();
 
-            // Registrera andra tjänster och repositories
-            //builder.RegisterType<NavigationMenu>().AsSelf().SingleInstance();
-            //builder.RegisterType<RoomService>().AsSelf().InstancePerLifetimeScope();
-            //builder.RegisterType<CustomerService>().AsSelf().InstancePerLifetimeScope();
-            //builder.RegisterType<BookingService>().AsSelf().InstancePerLifetimeScope();
-            ////builder.RegisterType<InvoiceService>().AsSelf().InstancePerLifetimeScope();
+            //Registrera andra tjänster och repositories
+            builder.RegisterType<NavigationMenu>().AsSelf().SingleInstance();
+            builder.RegisterType<RoomService>().As<IRoomService>().InstancePerLifetimeScope();
+            builder.RegisterType<CustomerService>().As<ICustomerService>().InstancePerLifetimeScope();
+            builder.RegisterType<BookingService>().As<IBookingService>().InstancePerLifetimeScope();
+            //builder.RegisterType<InvoiceService>().AsSelf().InstancePerLifetimeScope();
 
-            //builder.RegisterType<RoomRepository>().AsSelf().InstancePerLifetimeScope();
-            //builder.RegisterType<CustomerRepository>().AsSelf().InstancePerLifetimeScope();
-            //builder.RegisterType<BookingRepository>().AsSelf().InstancePerLifetimeScope();
-            ////builder.RegisterType<InvoiceRepository>().AsSelf().InstancePerLifetimeScope();
+            builder.RegisterType<RoomRepository>().As<IRoomRepository>().InstancePerLifetimeScope();
+            builder.RegisterType<CustomerRepository>().As<ICustomerRepository>().InstancePerLifetimeScope();
+            builder.RegisterType<BookingRepository>().As<IBookingRepository>().InstancePerLifetimeScope();
+            //builder.RegisterType<InvoiceRepository>().AsSelf().InstancePerLifetimeScope();
 
-            //builder.RegisterType<CustomerController>().AsSelf().InstancePerLifetimeScope();
-            //builder.RegisterType<BookingController>().AsSelf().InstancePerLifetimeScope();
-            //builder.RegisterType<RoomController>().AsSelf().InstancePerLifetimeScope();
+            builder.RegisterType<CustomerController>().AsSelf().InstancePerLifetimeScope();
+            builder.RegisterType<BookingController>().AsSelf().InstancePerLifetimeScope();
+            builder.RegisterType<RoomController>().AsSelf().InstancePerLifetimeScope();
 
-            //builder.RegisterType<MenuManager>().AsSelf().InstancePerLifetimeScope();
+            builder.RegisterType<MainMenu>().AsSelf().InstancePerLifetimeScope();
         }
 
 

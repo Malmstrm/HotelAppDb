@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using HotelBookingApp.Model;
 
-namespace HotelBookingApp.Data
+namespace HotelAppDb.Data
 {
     public class DataInitializer
     {

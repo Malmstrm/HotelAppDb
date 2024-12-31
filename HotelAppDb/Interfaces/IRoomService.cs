@@ -1,6 +1,7 @@
-﻿using HotelBookingApp.Model;
+﻿using HotelAppDb.Repositories;
+using HotelBookingApp.Model;
 
-namespace HotelBookingApp.Interface
+namespace HotelAppDb.Interfaces
 {
     public interface IRoomService
     {
@@ -10,5 +11,6 @@ namespace HotelBookingApp.Interface
         void AddRoom(int roomNumber, string type, decimal price, int squareMeter);
         void UpdateRoom(int roomNumber, string? type = null, decimal? price = null, int? squareMeter = null);
         void DeleteRoom(int roomId);
+        public Room? GetRoomByNumber(int roomNumber);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Autofac;
-using HotelBookingApp.AppModules;
-using HotelBookingApp.Data;
+using HotelAppDb.Data;
+using HotelAppDb.AppModules;
+using HotelAppDb.Controllers;
 
 
 namespace HotelBookingApp
@@ -26,8 +27,8 @@ namespace HotelBookingApp
 
                 // Hämta MenuManager från Autofac och starta menyerna
 
-                //var menuManager = scope.Resolve<MenuManager>();
-                //menuManager.Run();
+                var mainMenu = scope.Resolve<MainMenu>();
+                mainMenu.Run();
             }
         }
     }

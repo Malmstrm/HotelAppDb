@@ -1,6 +1,6 @@
 ﻿using HotelBookingApp.Model;
 
-namespace HotelBookingApp.Interface
+namespace HotelAppDb.Interfaces
 {
     public interface IBookingRepository
     {
@@ -9,6 +9,6 @@ namespace HotelBookingApp.Interface
         void Add(Booking booking);
         void Update(Booking booking);
         void Delete(int bookingId);
-        List<Room> GetAvailableRooms(DateTime checkIn, DateTime checkOut);
+        //List<Room> GetAvailableRooms(DateTime checkIn, DateTime checkOut);
     }
 }

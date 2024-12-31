@@ -1,6 +1,6 @@
 ﻿using HotelBookingApp.Model;
 
-namespace HotelBookingApp.Interface
+namespace HotelAppDb.Interfaces
 {
     public interface IBookingService
     {
@@ -10,6 +10,6 @@ namespace HotelBookingApp.Interface
         void UpdateBooking(int bookingId, int roomId, DateTime? checkIn = null, DateTime? checkOut = null);
         void DeleteBooking(int bookingId);
         bool IsDateValid(DateTime date);
-        List<Room> GetAvailableRooms(DateTime checkIn, DateTime checkOut);
+        //List<Room> GetAvailableRooms(DateTime checkIn, DateTime checkOut);
     }
 }
