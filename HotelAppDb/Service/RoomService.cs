@@ -57,12 +57,12 @@ namespace HotelAppDb.Service
 
             _roomRepository.Update(room);
         }
-        public void DeleteRoom(int roomNumber)
+        public void DeleteRoom(int roomId)
         {
-            var room = _roomRepository.GetByRoomNumber(roomNumber);
+            var room = _roomRepository.GetById(roomId);
             if (room == null)
-                throw new ArgumentException($"No room was found witht that number: {roomNumber}");
-            _roomRepository.Delete(roomNumber);
+                throw new ArgumentException($"No room was found witht that ID: {roomId}");
+            _roomRepository.Delete(roomId);
         }
 
     }

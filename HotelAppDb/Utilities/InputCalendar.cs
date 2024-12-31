@@ -4,7 +4,12 @@ namespace HotelAppDb.Utilities
 {
     public class InputCalendar
     {
-        public static DateTime SelectDate(DateTime initialDate, string prompt, bool allowPastDates = false)
+        public static DateTime SelectDate(
+            DateTime initialDate,
+            string prompt,
+            bool allowPastDates = false,
+            DateTime? minDate = null,
+            DateTime? maxDate = null)
         {
             DateTime currentDate = initialDate;
 
@@ -12,6 +17,15 @@ namespace HotelAppDb.Utilities
             {
                 Console.Clear();
                 RenderCalendar(currentDate, prompt);
+
+                if (minDate.HasValue && currentDate < minDate.Value)
+                {
+                    currentDate = minDate.Value;
+                }
+                if (maxDate.HasValue && currentDate > maxDate.Value)
+                {
+                    currentDate = maxDate.Value;
+                }
 
                 var key = Console.ReadKey(true).Key;
 
@@ -45,6 +59,7 @@ namespace HotelAppDb.Utilities
                 }
             }
         }
+
         private static void RenderCalendar(DateTime selectedDate, string prompt)
         {
             var calendarContent = new StringWriter();
@@ -68,9 +83,16 @@ namespace HotelAppDb.Utilities
             // Skriv ut dagarna
             for (int day = 1; day <= daysInMonth; day++)
             {
+                var currentDay = new DateTime(selectedDate.Year, selectedDate.Month, day);
+                bool isWeekend = currentDay.DayOfWeek == DayOfWeek.Saturday || currentDay.DayOfWeek == DayOfWeek.Sunday;
+
                 if (day == selectedDate.Day)
                 {
                     calendarContent.Write($"[green]{day,2}[/]   ");
+                }
+                else if (isWeekend)
+                {
+                    calendarContent.Write($"[red]{day,2}[/]   ");
                 }
                 else
                 {

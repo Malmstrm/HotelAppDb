@@ -1,11 +1,7 @@
 ﻿using HotelAppDb.Interfaces;
-using HotelAppDb.Service;
+using HotelBookingApp.Model;
 using Spectre.Console;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 using static HotelAppDb.Utilities.InputHandler;
 
 namespace HotelAppDb.Controllers
@@ -107,30 +103,58 @@ namespace HotelAppDb.Controllers
             AnsiConsole.Write(table);
         }
 
-
         public void ViewAvailableRooms(DateTime checkIn, DateTime checkOut)
         {
             Console.Clear();
 
             var rooms = _roomService.GetAvailableRooms(checkIn, checkOut);
-            Console.WriteLine($"{"ID",-5}{"Room Number",-15}{"Type",-10}{"Price",-10}");
-            Console.WriteLine(new string('-', 50));
+
+            if (rooms == null || rooms.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No available rooms found between {checkIn:yyyy-MM-dd} and {checkOut:yyyy-MM-dd}.[/]");
+                AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
+                Console.ReadKey();
+                return;
+            }
+
+            var table = new Table
+            {
+                Border = TableBorder.Rounded
+            };
+
+            table.AddColumn("[bold]ID[/]");
+            table.AddColumn("[bold]Number[/]");
+            table.AddColumn("[bold]Type[/]");
+            table.AddColumn("[bold]Price[/]");
+
+            table.Title = new TableTitle($"[green]Available Rooms[/]\n[blue]{checkIn:yyyy-MM-dd} to {checkOut:yyyy-MM-dd}[/]");
+            table.Caption = new TableTitle("[grey]Use the room ID to select a room.[/]");
 
             foreach (var room in rooms)
             {
-                Console.WriteLine($"{room.RoomId,-5}{room.RoomNumber,-15}{room.Type,-10}{room.Price,-10}");
+                table.AddRow(
+                    room.RoomId.ToString(),
+                    room.RoomNumber.ToString(),
+                    room.Type,
+                    $"{room.Price:C}"
+                );
             }
 
+            AnsiConsole.Write(table);
         }
         private void AddRoom()
         {
+            Console.Clear();
+            AnsiConsole.Write(new Panel("[bold blue]Add New Room[/]").Border(BoxBorder.Double).Expand());
+
             var roomNumber = InputHelper.GetInputWithValidation(
-                "Enter Room Number: ",
-                "Invalid Room Number, must be between 100 and 1000.",
+                "Enter Room Number (100-1000): ",
+                "Invalid Room Number. Must be between 100 and 1000.",
                 () => ViewAllRooms(),
                 input => int.TryParse(input, out int num) && num >= 100 && num <= 1000,
                 int.Parse
-                );
+            );
+
             var type = InputHelper.GetInputWithValidation(
                 "Enter Room Type (Single/Double/Suite): ",
                 "Invalid room type. Please enter one of the following: Single, Double, or Suite.",
@@ -141,39 +165,41 @@ namespace HotelAppDb.Controllers
                           input.Equals("Suite", StringComparison.OrdinalIgnoreCase)),
                 input => char.ToUpper(input[0]) + input.Substring(1).ToLower()
             );
+
             var price = InputHelper.GetInputWithValidation(
                 "Enter Room Price: ",
-                "Invalid price, cant be negative. Enter postive number.",
+                "Invalid price. Must be a positive number.",
                 () => ViewAllRooms(),
                 input => decimal.TryParse(input, out decimal num) && num > 0,
                 decimal.Parse
-                );
+            );
+
             var squareMeter = InputHelper.GetInputWithValidation(
-                "Enter Rooms Square Meter: ",
-                "Invalid input, enter postive number.",
+                "Enter Room Square Meter: ",
+                "Invalid input. Must be a positive number.",
                 () => ViewAllRooms(),
                 input => int.TryParse(input, out int num) && num > 0,
                 int.Parse
-                );
+            );
 
             try
             {
                 _roomService.AddRoom(roomNumber, type, price, squareMeter);
-                Console.WriteLine("Room added successfully.");
-
+                AnsiConsole.MarkupLine("[bold green]Room added successfully![/]");
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                AnsiConsole.MarkupLine($"[bold red]Error: {ex.Message}[/]");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
-                Console.ReadKey();
+                AnsiConsole.MarkupLine($"[bold red]An unexpected error occurred: {ex.Message}[/]");
             }
 
-            Thread.Sleep(2000);
+            AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
+            Console.ReadKey();
         }
+
         private void DisplayRoomDetails(int roomNumber, string? newType = null, decimal? newPrice = null, int? newSquareMeter = null)
         {
             var room = _roomService.GetRoomByNumber(roomNumber);
@@ -215,13 +241,24 @@ namespace HotelAppDb.Controllers
         private void UpdateRoom()
         {
             Console.Clear();
-            var roomNumber = InputHelper.GetInputWithValidation(
-                "Enter number of which Room you want to update: ",
-                "Invalid ID. Please enter a valid number.",
-                () => ViewAllRooms(),
-                input => int.TryParse(input, out _), // Validerar att det är ett heltal
-                int.Parse          // Konverterar till heltal
-            );
+            int roomNumber;
+            while (true)
+            {
+                roomNumber = InputHelper.GetInputWithValidation(
+                    "Enter number of which Room you want to update: ",
+                    "Invalid number. Please enter a valid number.",
+                    () => ViewAllRooms(),
+                    input => int.TryParse(input, out _), // Validerar att det är ett heltal
+                    int.Parse          // Konverterar till heltal
+                );
+                var room = _roomService.GetRoomByNumber(roomNumber);
+                if (room != null)
+                {
+                    break; // Rummet hittades, fortsätt
+                }
+                Console.WriteLine($"Room with number {roomNumber} not found. Please try again.");
+                Thread.Sleep(2000);
+            }
             if (!InputHelper.ConfirmAction("Are you sure you want to update this Room?"))
             {
                 Console.WriteLine("Update canceled.");
@@ -262,16 +299,31 @@ namespace HotelAppDb.Controllers
         }
         private void DeleteRoom()
         {
-            Console.Clear();
-            ViewAllRooms();
-            Console.Write("Enter Room number to delete: ");
-            var roomNumber = int.Parse(Console.ReadLine()!);
+            int roomId;
+            while (true)
+            {
+                roomId = InputHelper.GetInputWithValidation(
+                "Enter ID of which Room to delete: ",
+                "Wrong input, choose correct ID.",
+                () => ViewAllRooms(),
+                input => int.TryParse(input, out _),
+                int.Parse
+                );
+                var roomDelete = _roomService.GetRoomById(roomId);
+                if (roomDelete != null)
+                {
+                    break;
+                }
+                Console.WriteLine($"Room ID {roomId} was not found.");
+                Thread.Sleep(1500);
+            }
+
             if (!InputHelper.ConfirmAction("Are you sure you want to delete this Room?"))
             {
                 Console.WriteLine("Deletion canceled.");
                 return;
             }
-            _roomService.DeleteRoom(roomNumber);
+            _roomService.DeleteRoom(roomId);
             Console.WriteLine("Room deleted successfully.");
             Thread.Sleep(2000);
         }

@@ -1,5 +1,6 @@
 ﻿using HotelAppDb.Interfaces;
 using HotelAppDb.Service;
+using HotelBookingApp.Model;
 using Spectre.Console;
 using System.Text.RegularExpressions;
 using static HotelAppDb.Utilities.InputHandler;
@@ -97,63 +98,102 @@ namespace HotelAppDb.Controllers
 
             // Visa tabellen
             AnsiConsole.Write(table);
-            //AnsiConsole.MarkupLine("\nPress [yellow]any key[/] to return to the menu.");
-            //Console.ReadKey();
         }
         private void AddCustomer()
         {
+            AnsiConsole.Clear();
+
+            // First Name
             var firstName = InputHelper.GetInputWithValidation<string>(
-                "Enter First Name: ",
-                "Invalid input, first names shall only contain letters. Please try again.",
-                () => ViewAllCustomers(),
+                "Enter First Name:",
+                "Invalid input, first names shall only contain letters. Please try again.[",
+                () =>
+                {
+                    AnsiConsole.MarkupLine("[gray]Provide the customer's first name.[/]");
+                    AnsiConsole.WriteLine(); // Lägg till en tom rad
+                },
                 input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$")
             );
+
+            // Last Name
             var lastName = InputHelper.GetInputWithValidation<string>(
                 "Enter Last Name: ",
                 "Invalid input, last names shall only contain letters. Please try again.",
-                () => Console.WriteLine($"First name: {firstName}"),
+                () =>
+                {
+                    AnsiConsole.MarkupLine($"[gray]First name:[/] [yellow]{firstName}[/]");
+                    AnsiConsole.WriteLine(); // Lägg till en tom rad
+                },
                 input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$")
             );
+
+            // Email
             var email = InputHelper.GetInputWithValidation<string>(
                 "Enter Email: ",
                 "Invalid email format or email already exists. Please try again.",
-                () => Console.WriteLine($"First name: {firstName} Last name: {lastName}"),
+                () =>
+                {
+                    AnsiConsole.MarkupLine($"[gray]First name:[/] [yellow]{firstName}[/] [gray]Last name:[/] [yellow]{lastName}[/]");
+                    AnsiConsole.WriteLine(); // Lägg till en tom rad
+                },
                 input => !string.IsNullOrWhiteSpace(input) &&
                          _customerService.IsValidEmail(input) &&
                          _customerService.IsEmailUnique(input)
             );
+
+            // Phone Number
             var phoneNumber = InputHelper.GetInputWithValidation<string>(
                 "Enter Phone Number: ",
                 "Invalid phone number format. Please try again.",
-                () => Console.WriteLine($"First name: {firstName} Last name: {lastName} Email: {email}"),
+                () =>
+                {
+                    AnsiConsole.MarkupLine($"[gray]First name:[/] [yellow]{firstName}[/] [gray]Last name:[/] [yellow]{lastName}[/] [gray]Email:[/] [yellow]{email}[/]");
+                    AnsiConsole.WriteLine(); // Lägg till en tom rad
+                },
                 input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^\d+$") // Endast siffror
             );
 
             try
             {
                 _customerService.AddCustomer(firstName, lastName, email, phoneNumber);
-                Console.WriteLine("Customer added successfully.");
+                AnsiConsole.MarkupLine("[bold green]Customer added successfully![/]");
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                AnsiConsole.MarkupLine($"[red]An unexpected error occurred:[/] {ex.Message}");
             }
-            Thread.Sleep(1000);
+
+            AnsiConsole.MarkupLine("[gray]Press any key to return to the menu...[/]");
+            Console.ReadKey();
         }
+
         private void UpdateCustomer()
         {
             Console.Clear();
-            var customerId = InputHelper.GetInputWithValidation(
-                "Enter ID of the customer to update: ",
-                "Invalid ID. Please enter a valid numeric ID.",
-                () => ViewAllCustomers(),
-                input => int.TryParse(input, out _), // Validerar att det är ett heltal
-                int.Parse          // Konverterar till heltal
-            );
+
+            int customerId;
+            while (true)
+            {
+                customerId = InputHelper.GetInputWithValidation(
+                    "Enter ID of the customer to update: ",
+                    "Invalid ID. Please enter a valid numeric ID.",
+                    () => ViewAllCustomers(),
+                    input => int.TryParse(input, out _), // Validerar att det är ett heltal
+                    int.Parse          // Konverterar till heltal
+                );
+                var customerUpdate = _customerService.GetCustomerById(customerId);
+                if (customerUpdate != null)
+                {
+                    break;
+                }
+                Console.WriteLine($"No customer with that ID {customerId} was not found.");
+                Thread.Sleep(1500);
+            }
+
             Console.WriteLine("Are you sure you want to update this Customer? (yes/no)");
             var confirmation = Console.ReadLine();
             if (!confirmation.Equals("yes", StringComparison.OrdinalIgnoreCase))
@@ -208,14 +248,29 @@ namespace HotelAppDb.Controllers
         }
         private void DeleteCustomer()
         {
-            var customerId = InputHelper.GetInputWithValidation(
-                "Enter ID of the customer to delete: ",
-                "Invalid ID. Please enter a valid numeric ID.",
-                () => ViewAllCustomers(),
-                input => int.TryParse(input, out _), // Validerar att det är ett heltal
-                int.Parse          // Konverterar till heltal
-            );
-
+            int customerId;
+            while (true)
+            {
+                customerId = InputHelper.GetInputWithValidation(
+                    "Enter ID of the customer to delete: ",
+                    "Invalid ID. Please enter a valid numeric ID.",
+                    () => ViewAllCustomers(),
+                    input => int.TryParse(input, out _), // Validerar att det är ett heltal
+                    int.Parse          // Konverterar till heltal
+                );
+                var customerDelete = _customerService.GetCustomerById(customerId);
+                if (customerDelete != null)
+                {
+                    break;
+                }
+                Console.WriteLine($"Customer ID {customerId} was not found.");
+                Thread.Sleep(1500);
+            }
+            if (!InputHelper.ConfirmAction("Are you sure you want to delete this Customer?"))
+            {
+                Console.WriteLine("Deletion canceled.");
+                return;
+            }
             try
             {
                 _customerService.DeleteCustomer(customerId);

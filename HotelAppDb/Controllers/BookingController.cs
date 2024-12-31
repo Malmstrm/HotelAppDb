@@ -76,52 +76,83 @@ namespace HotelAppDb.Controllers
 
             if (bookings == null || bookings.Count == 0)
             {
-                Console.WriteLine("No bookings found.");
+                AnsiConsole.MarkupLine("[bold red]No bookings found.[/]");
                 return;
             }
 
-            // Rubriker med justerad bredd
-            Console.WriteLine($"{"ID",-10}{"Customer",-25}{"Room",-10}{"Check-In",-15}{"Check-Out",-15}{"Nights",-10}{"Price",-10}");
-            Console.WriteLine(new string('-', 90));
+            // Skapa en tabell för att visa bokningar
+            var table = new Table
+            {
+                Border = TableBorder.Rounded
+            };
 
-            // Iterera genom bokningarna och visa relevant information
+            // Lägg till rubriker
+            table.AddColumn("[bold]ID[/]");
+            table.AddColumn("[bold]Customer[/]");
+            table.AddColumn("[bold]Room[/]");
+            table.AddColumn("[bold]Check-In[/]");
+            table.AddColumn("[bold]Check-Out[/]");
+            table.AddColumn("[bold]Nights[/]");
+            table.AddColumn("[bold]Price[/]");
+
+            // Iterera genom bokningarna och lägg till rader i tabellen
             foreach (var booking in bookings)
             {
                 var customerName = booking.Customer != null
                     ? $"{booking.Customer.FirstName} {booking.Customer.LastName}"
-                    : "Unknown";
+                    : "[grey]Unknown[/]";
 
                 var roomInfo = booking.Room != null
-                    ? $"#{booking.Room.RoomNumber} ({booking.Room.Type})"
-                    : "Unknown";
+                    ? $"[blue]#{booking.Room.RoomNumber}[/] ([green]{booking.Room.Type}[/])"
+                    : "[grey]Unknown[/]";
 
-                Console.WriteLine(
-                    $"{booking.BookingId,-10}" +
-                    $"{customerName,-25}" +
-                    $"{roomInfo,-10}" +
-                    $"{booking.CheckInDate.ToString("yyyy-MM-dd"),-15}" +
-                    $"{booking.CheckOutDate.ToString("yyyy-MM-dd"),-15}" +
-                    $"{booking.NumberOfNights,-10}" +
-                    $"{booking.CustomerId}");
+                table.AddRow(
+                    booking.BookingId.ToString(),
+                    customerName,
+                    roomInfo,
+                    $"[green]{booking.CheckInDate:yyyy-MM-dd}[/]",
+                    $"[red]{booking.CheckOutDate:yyyy-MM-dd}[/]",
+                    booking.NumberOfNights.ToString(),
+                    $"[cyan]{booking.NumberOfNights*booking.Room.Price:C}[/]"
+                );
             }
 
-            Console.WriteLine(new string('-', 90));
+            // Skriv ut tabellen
+            AnsiConsole.Write(table);
         }
+
         private void DisplayBookingDetail(int bookingId)
         {
             var booking = _bookingService.GetBookingById(bookingId);
             if (booking == null)
             {
-                Console.WriteLine($"Booking with that ID {bookingId} not found.");
+                AnsiConsole.MarkupLine($"[bold red]Booking with ID {bookingId} not found.[/]");
                 return;
             }
-            Console.WriteLine($"Current Booking Details:");
-            Console.WriteLine($"{booking.CheckInDate}");
-            Console.WriteLine($"{booking.CheckOutDate}");
-            Console.WriteLine($"{booking.RoomId}");
-            Console.WriteLine(new string('-', 40));
 
+            // Skapa en tabell för att visa bokningsdetaljer
+            var table = new Table
+            {
+                Border = TableBorder.Rounded
+            };
+
+            table.AddColumn("[bold]Property[/]");
+            table.AddColumn("[bold]Value[/]");
+
+            table.AddRow("Check-In Date", $"[green]{booking.CheckInDate:yyyy-MM-dd}[/]");
+            table.AddRow("Check-Out Date", $"[green]{booking.CheckOutDate:yyyy-MM-dd}[/]");
+            table.AddRow("Room ID", $"[blue]{booking.RoomId}[/]");
+            table.AddRow("Customer", $"[yellow]{booking.Customer?.FirstName} {booking.Customer?.LastName}[/]");
+            table.AddRow("Total Price", $"[bold cyan]{booking.NumberOfNights*booking.Room.Price}[/]");
+
+            // Skriv ut tabellen
+            AnsiConsole.Write(table);
+
+            // Extra instruktioner för användaren
+            AnsiConsole.MarkupLine("\n[grey]Press any key to return to the menu...[/]");
+            Console.ReadKey();
         }
+
         private void CreateBooking()
         {
             // Välj kund
@@ -153,9 +184,8 @@ namespace HotelAppDb.Controllers
             int extraBeds = 0;
             if (room.Type.Equals("Double", StringComparison.OrdinalIgnoreCase) && room.SquareMeter > 15)
             {
-                Console.Write("Room allows extra beds. Enter number of extra beds (0-2): ");
                 extraBeds = InputHelper.GetInputWithValidation(
-                    "",
+                    "Room allows extra beds. Enter number of extra beds (0-2): ",
                     "Invalid input. Please enter a number between 0 and 2.",
                     () => Console.WriteLine($"Room {room.RoomNumber} selected."),
                     input => int.TryParse(input, out int num) && num >= 0 && num <= 2,
@@ -180,13 +210,26 @@ namespace HotelAppDb.Controllers
         }
         private void UpdateBooking()
         {
-            var bookingId = InputHelper.GetInputWithValidation(
+            
+            int bookingId;
+            while (true)
+            {
+                bookingId = InputHelper.GetInputWithValidation(
                 "Enter ID of booking to update: ",
                 "Invalid ID, select correct ID",
                 () => ViewBookings(),
                 input => int.TryParse(input, out _),
                 int.Parse
             );
+                var bookingupdate = _bookingService.GetBookingById(bookingId);
+                if (bookingupdate != null)
+                {
+                    break;
+                }
+                Console.WriteLine($"Booking with ID {bookingId} was not found.");
+                Thread.Sleep(1500);
+            }
+
 
             var booking = _bookingService.GetBookingById(bookingId);
             if (booking == null)
@@ -207,6 +250,23 @@ namespace HotelAppDb.Controllers
             DisplayBookingDetail(bookingId);
 
             var roomId = SelectRoom(checkIn, checkOut);
+            if (roomId == null)
+            {
+                Console.WriteLine("No room selected. Booking canceled.");
+                return;
+            }
+            int extraBeds = 0;
+            if (roomId.Type.Equals("Double", StringComparison.OrdinalIgnoreCase) && roomId.SquareMeter > 15)
+            {
+                
+                extraBeds = InputHelper.GetInputWithValidation(
+                    "Room allows extra beds, up to 2 extra beds: ",
+                    "Invalid input. Please enter a number between 0 and 2.",
+                    () => Console.WriteLine($"Room {roomId.RoomNumber} selected."),
+                    input => int.TryParse(input, out int num) && num >= 0 && num <= 2,
+                    int.Parse
+                );
+            }
 
             try
             {
@@ -297,27 +357,39 @@ namespace HotelAppDb.Controllers
                 {
                     Console.WriteLine("Date selection canceled. Please try again.");
                     Thread.Sleep(2000);
+                    
                 }
             }
         }
         private void DeleteBooking()
         {
             Console.Clear();
-            var bookingToDel = InputHelper.GetInputWithValidation(
+            int bookingId;
+            while (true)
+            {
+                bookingId = InputHelper.GetInputWithValidation(
                 "Enter ID of which booking to delete: ",
                 "Wrong input, choose correct ID.",
                 () => ViewBookings(),
                 input => int.TryParse(input, out _),
                 int.Parse
                 );
-            if (!InputHelper.ConfirmAction("Are you sure you want to delete this booking?"))
+                var bookingDelete = _bookingService.GetBookingById(bookingId);
+                if (bookingDelete != null)
+                {
+                    break;
+                }
+                Console.WriteLine($"Booking ID {bookingId} was not found.");
+                Thread.Sleep(1500);
+            }
+            if (!InputHelper.ConfirmAction("Are you sure you want to delete this Booking?"))
             {
                 Console.WriteLine("Deletion canceled.");
                 return;
             }
             try
             {
-                _bookingService.DeleteBooking(bookingToDel);
+                _bookingService.DeleteBooking(bookingId);
                 Console.WriteLine("Booking deleted successfully.");
 
             }

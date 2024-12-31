@@ -32,9 +32,9 @@ namespace HotelAppDb.Repositories
             _dbContext.Room.Update(room);
             _dbContext.SaveChanges();
         }
-        public void Delete(int roomNumber)
+        public void Delete(int roomID)
         {
-            var room = GetByRoomNumber(roomNumber);
+            var room = GetById(roomID);
             if (room != null)
             {
                 _dbContext.Room.Remove(room);
