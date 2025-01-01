@@ -106,25 +106,25 @@ namespace HotelAppDb.Controllers
             // First Name
             var firstName = InputHelper.GetInputWithValidation<string>(
                 "Enter First Name:",
-                "Invalid input, first names shall only contain letters. Please try again.[",
+                "Invalid input, first names shall only contain max 25 letters. Please try again.",
                 () =>
                 {
                     AnsiConsole.MarkupLine("[gray]Provide the customer's first name.[/]");
                     AnsiConsole.WriteLine(); // Lägg till en tom rad
                 },
-                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$")
+                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$") && input.Length <= 25
             );
 
             // Last Name
             var lastName = InputHelper.GetInputWithValidation<string>(
                 "Enter Last Name: ",
-                "Invalid input, last names shall only contain letters. Please try again.",
+                "Invalid input, first names shall only contain max 25 letters. Please try again.",
                 () =>
                 {
                     AnsiConsole.MarkupLine($"[gray]First name:[/] [yellow]{firstName}[/]");
                     AnsiConsole.WriteLine(); // Lägg till en tom rad
                 },
-                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$")
+                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$") && input.Length <= 25
             );
 
             // Email
@@ -138,7 +138,8 @@ namespace HotelAppDb.Controllers
                 },
                 input => !string.IsNullOrWhiteSpace(input) &&
                          _customerService.IsValidEmail(input) &&
-                         _customerService.IsEmailUnique(input)
+                         _customerService.IsEmailUnique(input) && 
+                         input.Length <= 128
             );
 
             // Phone Number
@@ -150,7 +151,7 @@ namespace HotelAppDb.Controllers
                     AnsiConsole.MarkupLine($"[gray]First name:[/] [yellow]{firstName}[/] [gray]Last name:[/] [yellow]{lastName}[/] [gray]Email:[/] [yellow]{email}[/]");
                     AnsiConsole.WriteLine(); // Lägg till en tom rad
                 },
-                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^\d+$") // Endast siffror
+                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^\d+$") && input.Length <= 12 // Endast siffror
             );
 
             try
@@ -203,16 +204,16 @@ namespace HotelAppDb.Controllers
             }
             var firstName = InputHelper.GetInputWithValidation<string>(
                 "Leave Blank to keep current value\nEnter First Name: ",
-                "Invalid input, first names shall only contain letters. Please try again.",
+                "Invalid input, first names shall only contain max 25 letters. Please try again.",
                 () => ViewAllCustomers(),
-                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$"),
+                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$") && input.Length <= 25,
                 allowEmpty: true
             );
             var lastName = InputHelper.GetInputWithValidation<string>(
                 "Leave Blank to keep current value\nEnter Last Name: ",
-                "Invalid input, last names shall only contain letters. Please try again.",
+                "Invalid input, last names shall only contain max 25 letters. Please try again.",
                 () => ViewAllCustomers(),
-                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$"),
+                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^[a-zA-ZåäöÅÄÖ]+$") && input.Length <= 25,
                 allowEmpty: true
             );
             var email = InputHelper.GetInputWithValidation<string>(
@@ -221,17 +222,17 @@ namespace HotelAppDb.Controllers
                 () => ViewAllCustomers(),
                 input => !string.IsNullOrWhiteSpace(input) &&
                          _customerService.IsValidEmail(input) &&
-                         _customerService.IsEmailUnique(input),
+                         _customerService.IsEmailUnique(input) && 
+                         input.Length <= 128,
                 allowEmpty: true
             );
             var phoneNumber = InputHelper.GetInputWithValidation<string>(
                 "Leave Blank to keep current value\nEnter Phone Number: ",
                 "Invalid phone number format. Please try again.",
                 () => ViewAllCustomers(),
-                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^\d+$"), // Endast siffror
+                input => !string.IsNullOrWhiteSpace(input) && Regex.IsMatch(input, @"^\d+$") && input.Length <= 12, // Endast siffror
                 allowEmpty: true
             );
-
             try
             {
                 _customerService.UpdateCustomer(customerId, firstName, lastName, email, phoneNumber);

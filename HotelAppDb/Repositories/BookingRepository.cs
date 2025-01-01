@@ -17,6 +17,7 @@ namespace HotelAppDb.Repositories
             return _dbContext.Booking
                 .Include(b => b.Customer) // Inkludera kunddata
                 .Include(b => b.Room)     // Inkludera rumsdata
+                .Where(b => b.CheckOutDate >= DateTime.Today) // Visa endast aktiva bokningar
                 .ToList();
         }
 
