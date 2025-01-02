@@ -45,9 +45,9 @@ namespace HotelAppDb.Data
                 dbContext.Room.Add(new Room
                 {
                     RoomNumber = 101,
-                    Type = "Single",
-                    Price = 500,
-                    SquareMeter = 15,
+                    Type = "Double",
+                    Price = 850,
+                    SquareMeter = 25,
                     IsAvailible = true,
                 });
             }
