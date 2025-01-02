@@ -12,7 +12,9 @@ namespace HotelAppDb.Repositories
         {
             _dbContext = dbContent;
         }
-        public List<Room> GetAll() => _dbContext.Room.ToList();
+        public List<Room> GetAll() => _dbContext.Room
+            .OrderBy(r => r.RoomNumber)
+            .ToList();
         public List<Room> GetAvailableRooms(DateTime checkIn, DateTime checkOut) => _dbContext.Room
             .Include(r => r.Bookings)
             .Where(r => r.Bookings.All(b =>

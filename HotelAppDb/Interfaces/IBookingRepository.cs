@@ -9,6 +9,6 @@ namespace HotelAppDb.Interfaces
         void Add(Booking booking);
         void Update(Booking booking);
         void Delete(int bookingId);
-        //List<Room> GetAvailableRooms(DateTime checkIn, DateTime checkOut);
+
     }
 }

@@ -109,7 +109,7 @@ namespace HotelAppDb.Controllers
 
             var rooms = _roomService.GetAvailableRooms(checkIn, checkOut);
 
-            if (rooms == null || rooms.Count == 0)
+            if (rooms == null || !rooms.Any())
             {
                 AnsiConsole.MarkupLine($"[red]No available rooms found between {checkIn:yyyy-MM-dd} and {checkOut:yyyy-MM-dd}.[/]");
                 AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
@@ -117,75 +117,112 @@ namespace HotelAppDb.Controllers
                 return;
             }
 
+            // Skapa en Spectre.Console-tabell
             var table = new Table
             {
-                Border = TableBorder.Rounded
+                Border = TableBorder.Rounded,
+                Expand = true
             };
 
-            table.AddColumn("[bold]ID[/]");
-            table.AddColumn("[bold]Number[/]");
-            table.AddColumn("[bold]Type[/]");
-            table.AddColumn("[bold]Price[/]");
+            // Lägg till kolumnrubriker
+            table.AddColumn(new TableColumn("[yellow]ID[/]").Centered());
+            table.AddColumn(new TableColumn("[yellow]Number[/]").Centered());
+            table.AddColumn(new TableColumn("[yellow]Type[/]").Centered());
+            table.AddColumn(new TableColumn("[yellow]Price[/]").Centered());
+            table.AddColumn(new TableColumn("[yellow]Square Meter[/]").Centered());
 
-            table.Title = new TableTitle($"[green]Available Rooms[/]\n[blue]{checkIn:yyyy-MM-dd} to {checkOut:yyyy-MM-dd}[/]");
+            // Lägg till rubriker och underrubriker
+            table.Title = new TableTitle($"[bold green]Available Rooms[/]\n[blue]{checkIn:yyyy-MM-dd} to {checkOut:yyyy-MM-dd}[/]");
             table.Caption = new TableTitle("[grey]Use the room ID to select a room.[/]");
 
+            // Lägg till rader för varje tillgängligt rum
             foreach (var room in rooms)
             {
                 table.AddRow(
                     room.RoomId.ToString(),
                     room.RoomNumber.ToString(),
                     room.Type,
-                    $"{room.Price:C}"
+                    room.Price.ToString("C"),
+                    room.SquareMeter.ToString()
                 );
             }
 
+            // Visa tabellen
             AnsiConsole.Write(table);
+
+            // Prompt användaren att fortsätta
+
         }
+
+
         private void AddRoom()
         {
-            Console.Clear();
-            AnsiConsole.Write(new Panel("[bold blue]Add New Room[/]").Border(BoxBorder.Double).Expand());
-
-            var roomNumber = InputHelper.GetInputWithValidation(
-                "Enter Room Number (100-1000): ",
-                "Invalid Room Number. Must be between 100 and 1000.",
-                () => ViewAllRooms(),
-                input => int.TryParse(input, out int num) && num >= 100 && num <= 1000,
-                int.Parse
-            );
-
-            var type = InputHelper.GetInputWithValidation(
-                "Enter Room Type (Single/Double/Suite): ",
-                "Invalid room type. Please enter one of the following: Single, Double, or Suite.",
-                () => ViewAllRooms(),
-                input => !string.IsNullOrWhiteSpace(input) &&
-                         (input.Equals("Single", StringComparison.OrdinalIgnoreCase) ||
-                          input.Equals("Double", StringComparison.OrdinalIgnoreCase) ||
-                          input.Equals("Suite", StringComparison.OrdinalIgnoreCase)),
-                input => char.ToUpper(input[0]) + input.Substring(1).ToLower()
-            );
-
-            var price = InputHelper.GetInputWithValidation(
-                "Enter Room Price: ",
-                "Invalid price. Must be a positive number.",
-                () => ViewAllRooms(),
-                input => decimal.TryParse(input, out decimal num) && num > 0,
-                decimal.Parse
-            );
-
-            var squareMeter = InputHelper.GetInputWithValidation(
-                "Enter Room Square Meter: ",
-                "Invalid input. Must be a positive number.",
-                () => ViewAllRooms(),
-                input => int.TryParse(input, out int num) && num > 0,
-                int.Parse
-            );
-
             try
             {
+                Console.Clear();
+                AnsiConsole.Write(new Panel("[bold blue]Add New Room[/]").Border(BoxBorder.Double).Expand());
+
+                var roomNumber = InputHelper.GetInputWithValidation(
+                    "Enter Room Number (100-1000): ",
+                    "Invalid Room Number. Must be between 100 and 1000.",
+                    () => ViewAllRooms(),
+                    input =>
+                    {
+                        if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                            throw new OperationCanceledException("Add Room process canceled.");
+                        return int.TryParse(input, out int num) && num >= 100 && num <= 1000;
+                    },
+                    int.Parse
+                );
+
+                var type = InputHelper.GetInputWithValidation(
+                    "Enter Room Type (Single/Double/Suite): ",
+                    "Invalid room type. Please enter one of the following: Single, Double, or Suite.",
+                    () => ViewAllRooms(),
+                    input =>
+                    {
+                        if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                            throw new OperationCanceledException("Add Room process canceled.");
+                        return !string.IsNullOrWhiteSpace(input) &&
+                               (input.Equals("Single", StringComparison.OrdinalIgnoreCase) ||
+                                input.Equals("Double", StringComparison.OrdinalIgnoreCase) ||
+                                input.Equals("Suite", StringComparison.OrdinalIgnoreCase));
+                    },
+                    input => char.ToUpper(input[0]) + input.Substring(1).ToLower()
+                );
+
+                var price = InputHelper.GetInputWithValidation(
+                    "Enter Room Price: ",
+                    "Invalid price. Must be a positive number.",
+                    () => ViewAllRooms(),
+                    input =>
+                    {
+                        if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                            throw new OperationCanceledException("Add Room process canceled.");
+                        return decimal.TryParse(input, out decimal num) && num > 0;
+                    },
+                    decimal.Parse
+                );
+
+                var squareMeter = InputHelper.GetInputWithValidation(
+                    "Enter Room Square Meter: ",
+                    "Invalid input. Must be a positive number.",
+                    () => ViewAllRooms(),
+                    input =>
+                    {
+                        if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                            throw new OperationCanceledException("Add Room process canceled.");
+                        return int.TryParse(input, out int num) && num > 0;
+                    },
+                    int.Parse
+                );
+
                 _roomService.AddRoom(roomNumber, type, price, squareMeter);
                 AnsiConsole.MarkupLine("[bold green]Room added successfully![/]");
+            }
+            catch (OperationCanceledException ex)
+            {
+                AnsiConsole.MarkupLine($"[bold red]{ex.Message}[/]");
             }
             catch (ArgumentException ex)
             {
@@ -195,10 +232,13 @@ namespace HotelAppDb.Controllers
             {
                 AnsiConsole.MarkupLine($"[bold red]An unexpected error occurred: {ex.Message}[/]");
             }
-
-            AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
-            Console.ReadKey();
+            finally
+            {
+                AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
+                Console.ReadKey();
+            }
         }
+
 
         private void DisplayRoomDetails(int roomNumber, string? newType = null, decimal? newPrice = null, int? newSquareMeter = null)
         {
@@ -240,92 +280,160 @@ namespace HotelAppDb.Controllers
 
         private void UpdateRoom()
         {
-            Console.Clear();
-            int roomNumber;
-            while (true)
+            try
             {
-                roomNumber = InputHelper.GetInputWithValidation(
-                    "Enter number of which Room you want to update: ",
-                    "Invalid number. Please enter a valid number.",
-                    () => ViewAllRooms(),
-                    input => int.TryParse(input, out _), // Validerar att det är ett heltal
-                    int.Parse          // Konverterar till heltal
-                );
-                var room = _roomService.GetRoomByNumber(roomNumber);
-                if (room != null)
+                Console.Clear();
+                int roomNumber;
+                while (true)
                 {
-                    break; // Rummet hittades, fortsätt
+                    roomNumber = InputHelper.GetInputWithValidation(
+                        "Enter number of which Room you want to update: ",
+                        "Invalid number. Please enter a valid number.",
+                        () => ViewAllRooms(),
+                        input =>
+                        {
+                            if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                                throw new OperationCanceledException("Update Room process canceled.");
+                            return int.TryParse(input, out _);
+                        },
+                        int.Parse
+                    );
+
+                    var room = _roomService.GetRoomByNumber(roomNumber);
+                    if (room != null)
+                        break;
+
+                    Console.WriteLine($"Room with number {roomNumber} not found. Please try again.");
+                    Thread.Sleep(2000);
                 }
-                Console.WriteLine($"Room with number {roomNumber} not found. Please try again.");
-                Thread.Sleep(2000);
-            }
-            if (!InputHelper.ConfirmAction("Are you sure you want to update this Room?"))
-            {
-                Console.WriteLine("Update canceled.");
-                return;
-            }
-            string? newType = null;
-            newType = InputHelper.GetInputWithValidation(
-                "(Single/Double/Suite)\nEnter new Type : ",
-                "Invalid type. Please choose Single, Double, or Suite.",
-                () => DisplayRoomDetails(roomNumber, newType: newType),
-                input => !string.IsNullOrWhiteSpace(input) &&
-                         (input.Equals("Single", StringComparison.OrdinalIgnoreCase) ||
-                          input.Equals("Double", StringComparison.OrdinalIgnoreCase) ||
-                          input.Equals("Suite", StringComparison.OrdinalIgnoreCase)),
-                input => char.ToUpper(input[0]) + input.Substring(1).ToLower(),
-                allowEmpty: true
-            );
-            var newPrice = InputHelper.GetInputWithValidation(
+
+                if (!InputHelper.ConfirmAction("Are you sure you want to update this Room?"))
+                {
+                    Console.WriteLine("Update canceled.");
+                    return;
+                }
+
+                var newType = InputHelper.GetInputWithValidation<string>(
+                    "(Single/Double/Suite)\nEnter new Type : ",
+                    "Invalid type. Please choose Single, Double, or Suite.",
+                    () => DisplayRoomDetails(roomNumber),
+                    input =>
+                    {
+                        if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                            throw new OperationCanceledException("Update Room process canceled.");
+                        return string.IsNullOrWhiteSpace(input) ||
+                               input.Equals("Single", StringComparison.OrdinalIgnoreCase) ||
+                               input.Equals("Double", StringComparison.OrdinalIgnoreCase) ||
+                               input.Equals("Suite", StringComparison.OrdinalIgnoreCase);
+                    },
+                    input => char.ToUpper(input[0]) + input.Substring(1).ToLower(),
+                    allowEmpty: true
+                );
+
+                var newPrice = InputHelper.GetInputWithValidation(
                     "Enter Price: ",
                     "Invalid price. Must be a positive value.",
                     () => DisplayRoomDetails(roomNumber),
-                    InputHelper.IsPositiveDecimal,
+                    input =>
+                    {
+                        if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                            throw new OperationCanceledException("Update Room process canceled.");
+                        return string.IsNullOrWhiteSpace(input) || decimal.TryParse(input, out decimal num) && num > 0;
+                    },
                     decimal.Parse,
                     allowEmpty: true
                 );
-            var newSquareMeter = InputHelper.GetInputWithValidation(
-                "Enter Square Meter: ",
-                "Invalid input. Must be a positive number.",
-                () => DisplayRoomDetails(roomNumber),
-                InputHelper.IsPositiveInt,
-                int.Parse,
-                allowEmpty: true
-            );
 
-            _roomService.UpdateRoom(roomNumber, newType, newPrice, newSquareMeter);
-            Console.WriteLine("Room updated successfully.");
-            Thread.Sleep(2000);
+                var newSquareMeter = InputHelper.GetInputWithValidation(
+                    "Enter Square Meter: ",
+                    "Invalid input. Must be a positive number.",
+                    () => DisplayRoomDetails(roomNumber),
+                    input =>
+                    {
+                        if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                            throw new OperationCanceledException("Update Room process canceled.");
+                        return string.IsNullOrWhiteSpace(input) || int.TryParse(input, out int num) && num > 0;
+                    },
+                    int.Parse,
+                    allowEmpty: true
+                );
+
+                _roomService.UpdateRoom(roomNumber, newType, newPrice, newSquareMeter);
+                Console.WriteLine("Room updated successfully.");
+                
+            }
+            catch (OperationCanceledException ex)
+            {
+                AnsiConsole.MarkupLine($"[bold red]{ex.Message}[/]");
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[bold red]An unexpected error occurred: {ex.Message}[/]");
+            }
+            finally
+            {
+                AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
+                Console.ReadKey();
+            }
         }
+
         private void DeleteRoom()
         {
             int roomId;
-            while (true)
-            {
-                roomId = InputHelper.GetInputWithValidation(
-                "Enter ID of which Room to delete: ",
-                "Wrong input, choose correct ID.",
-                () => ViewAllRooms(),
-                input => int.TryParse(input, out _),
-                int.Parse
-                );
-                var roomDelete = _roomService.GetRoomById(roomId);
-                if (roomDelete != null)
-                {
-                    break;
-                }
-                Console.WriteLine($"Room ID {roomId} was not found.");
-                Thread.Sleep(1500);
-            }
 
-            if (!InputHelper.ConfirmAction("Are you sure you want to delete this Room?"))
+            try
             {
-                Console.WriteLine("Deletion canceled.");
-                return;
+                while (true)
+                {
+                    roomId = InputHelper.GetInputWithValidation(
+                        "Enter ID of which Room to delete (or type 'Cancel' to abort): ",
+                        "Wrong input, choose a correct ID.",
+                        () => ViewAllRooms(),
+                        input =>
+                        {
+                            if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                                throw new OperationCanceledException("Deletion process canceled by the user.");
+                            return int.TryParse(input, out _);
+                        },
+                        int.Parse
+                    );
+
+                    var roomDelete = _roomService.GetRoomById(roomId);
+                    if (roomDelete != null)
+                    {
+                        break;
+                    }
+                    Console.WriteLine($"Room ID {roomId} was not found.");
+                    Thread.Sleep(1500);
+                }
+
+                if (!InputHelper.ConfirmAction("Are you sure you want to delete this Room?"))
+                {
+                    Console.WriteLine("Deletion canceled.");
+                    return;
+                }
+
+                _roomService.DeleteRoom(roomId);
+                Console.WriteLine("Room deleted successfully.");
             }
-            _roomService.DeleteRoom(roomId);
-            Console.WriteLine("Room deleted successfully.");
-            Thread.Sleep(2000);
+            catch (OperationCanceledException ex)
+            {
+                Console.WriteLine($"Operation canceled: {ex.Message}");
+                Thread.Sleep(2000);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            finally
+            {
+                AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
+                Console.ReadKey();
+            }
         }
     }
 }

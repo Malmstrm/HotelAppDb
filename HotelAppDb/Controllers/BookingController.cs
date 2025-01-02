@@ -24,12 +24,11 @@ namespace HotelAppDb.Controllers
         }
         public void DisplayBookingMenu()
         {
-            // Skapa menyalternativen en gång
             var menuPrompt = new SelectionPrompt<string>()
                 .Title("[yellow]Booking Management[/]")
                 .PageSize(10)
                 .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
-                .AddChoices(new[] 
+                .AddChoices(new[]
                 {
                     "Create Booking",
                     "View Bookings",
@@ -42,10 +41,8 @@ namespace HotelAppDb.Controllers
             {
                 Console.Clear();
 
-                // Visa menyn och få användarens val
                 var menuSelection = AnsiConsole.Prompt(menuPrompt);
 
-                // Hantera användarens val
                 switch (menuSelection)
                 {
                     case "Create Booking":
@@ -113,7 +110,7 @@ namespace HotelAppDb.Controllers
                     $"[green]{booking.CheckInDate:yyyy-MM-dd}[/]",
                     $"[red]{booking.CheckOutDate:yyyy-MM-dd}[/]",
                     booking.NumberOfNights.ToString(),
-                    $"[cyan]{booking.NumberOfNights*booking.Room.Price:C}[/]"
+                    $"[cyan]{booking.NumberOfNights * booking.Room.Price:C}[/]"
                 );
             }
 
@@ -143,61 +140,67 @@ namespace HotelAppDb.Controllers
             table.AddRow("Check-Out Date", $"[green]{booking.CheckOutDate:yyyy-MM-dd}[/]");
             table.AddRow("Room ID", $"[blue]{booking.RoomId}[/]");
             table.AddRow("Customer", $"[yellow]{booking.Customer?.FirstName} {booking.Customer?.LastName}[/]");
-            table.AddRow("Total Price", $"[bold cyan]{booking.NumberOfNights*booking.Room.Price}[/]");
+            table.AddRow("Total Price", $"[bold cyan]{booking.NumberOfNights * booking.Room.Price}[/]");
 
             // Skriv ut tabellen
             AnsiConsole.Write(table);
 
-            // Extra instruktioner för användaren
-            AnsiConsole.MarkupLine("\n[grey]Press any key to return to the menu...[/]");
-            Console.ReadKey();
         }
 
         private void CreateBooking()
         {
-            // Välj kund
-            var customer = SelectCustomer();
-            if (customer == null)
-            {
-                Console.WriteLine("No customer selected. Booking canceled.");
-                return;
-            }
-
-            // Välj Check-In datum
-            var checkIn = CheckDate("Enter Check-In date:");
-
-            // Välj Check-Out datum
-            var checkOut = CheckDate("Enter Check-Out date:", previousDate: checkIn);
-
-            // Visa tillgängliga rum
-            _roomController.ViewAvailableRooms(checkIn, checkOut);
-
-            // Välj rum
-            var room = SelectRoom(checkIn, checkOut);
-            if (room == null)
-            {
-                Console.WriteLine("No room selected. Booking canceled.");
-                return;
-            }
-
-            // Kontrollera om extrasäng behövs
-            int extraBeds = 0;
-            if (room.Type.Equals("Double", StringComparison.OrdinalIgnoreCase) && room.SquareMeter > 15)
-            {
-                extraBeds = InputHelper.GetInputWithValidation(
-                    "Room allows extra beds. Enter number of extra beds (0-2): ",
-                    "Invalid input. Please enter a number between 0 and 2.",
-                    () => Console.WriteLine($"Room {room.RoomNumber} selected."),
-                    input => int.TryParse(input, out int num) && num >= 0 && num <= 2,
-                    int.Parse
-                );
-            }
-
-            // Skapa bokningen
             try
             {
+                // Välj kund
+                var customer = SelectCustomer();
+                if (customer == null)
+                {
+                    Console.WriteLine("No customer selected. Booking canceled.");
+                    return;
+                }
+
+                // Välj Check-In datum
+                var checkIn = CheckDate("Enter Check-In date (type 'cancel' to abort):");
+
+                // Välj Check-Out datum
+                var checkOut = CheckDate("Enter Check-Out date (type 'cancel' to abort):", previousDate: checkIn);
+
+                // Visa tillgängliga rum
+                _roomController.ViewAvailableRooms(checkIn, checkOut);
+
+                // Välj rum
+                var room = SelectRoom(checkIn, checkOut);
+                if (room == null)
+                {
+                    Console.WriteLine("No room selected. Booking canceled.");
+                    return;
+                }
+
+                // Kontrollera om extrasäng behövs
+                int extraBeds = 0;
+                if (room.Type.Equals("Double", StringComparison.OrdinalIgnoreCase) && room.SquareMeter > 15)
+                {
+                    extraBeds = InputHelper.GetInputWithValidation(
+                        "Room allows extra beds. Enter number of extra beds (0-2): ",
+                        "Invalid input. Please enter a number between 0 and 2.",
+                        () => Console.WriteLine($"Room {room.RoomNumber} selected."),
+                        input =>
+                        {
+                            if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                                throw new OperationCanceledException("Booking creation canceled by user.");
+                            return int.TryParse(input, out int num) && num >= 0 && num <= 2;
+                        },
+                        int.Parse
+                    );
+                }
+
+                // Skapa bokningen
                 _bookingService.AddBooking(customer.CustomerId, room.RoomId, checkIn, checkOut, extraBeds);
                 Console.WriteLine($"Booking successfully created for Customer: {customer.FirstName} {customer.LastName}, Room: {room.RoomNumber}, Check-In: {checkIn:yyyy-MM-dd}, Check-Out: {checkOut:yyyy-MM-dd}.");
+            }
+            catch (OperationCanceledException ex)
+            {
+                Console.WriteLine($"Action canceled: {ex.Message}");
             }
             catch (Exception ex)
             {
@@ -205,83 +208,100 @@ namespace HotelAppDb.Controllers
             }
             finally
             {
-                Thread.Sleep(2000);
+                AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
+                Console.ReadKey();
             }
         }
+
         private void UpdateBooking()
         {
-            
-            int bookingId;
-            while (true)
-            {
-                bookingId = InputHelper.GetInputWithValidation(
-                "Enter ID of booking to update: ",
-                "Invalid ID, select correct ID",
-                () => ViewBookings(),
-                input => int.TryParse(input, out _),
-                int.Parse
-            );
-                var bookingupdate = _bookingService.GetBookingById(bookingId);
-                if (bookingupdate != null)
-                {
-                    break;
-                }
-                Console.WriteLine($"Booking with ID {bookingId} was not found.");
-                Thread.Sleep(1500);
-            }
-
-
-            var booking = _bookingService.GetBookingById(bookingId);
-            if (booking == null)
-            {
-                Console.WriteLine($"No booking found with ID {bookingId}.");
-                return;
-            }
-
-            Console.Clear();
-            DisplayBookingDetail(bookingId);
-
-            var checkIn = CheckDate("Enter Check-In date (yyyy-MM-dd): ", booking.CheckInDate);
-            Console.Clear();
-            DisplayBookingDetail(bookingId);
-
-            var checkOut = CheckDate("Enter Check-Out date (yyyy-MM-dd): ", booking.CheckOutDate);
-            Console.Clear();
-            DisplayBookingDetail(bookingId);
-
-            var roomId = SelectRoom(checkIn, checkOut);
-            if (roomId == null)
-            {
-                Console.WriteLine("No room selected. Booking canceled.");
-                return;
-            }
-            int extraBeds = 0;
-            if (roomId.Type.Equals("Double", StringComparison.OrdinalIgnoreCase) && roomId.SquareMeter > 15)
-            {
-                
-                extraBeds = InputHelper.GetInputWithValidation(
-                    "Room allows extra beds, up to 2 extra beds: ",
-                    "Invalid input. Please enter a number between 0 and 2.",
-                    () => Console.WriteLine($"Room {roomId.RoomNumber} selected."),
-                    input => int.TryParse(input, out int num) && num >= 0 && num <= 2,
-                    int.Parse
-                );
-            }
-
             try
             {
-                _bookingService.UpdateBooking(bookingId, roomId.RoomId, checkIn, checkOut);
+                int bookingId;
+                while (true)
+                {
+                    bookingId = InputHelper.GetInputWithValidation(
+                        "Enter ID of booking to update (type 'cancel' to abort): ",
+                        "Invalid ID, select correct ID",
+                        () => ViewBookings(),
+                        input =>
+                        {
+                            if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                                throw new OperationCanceledException("Update canceled by user.");
+                            return int.TryParse(input, out _);
+                        },
+                        int.Parse
+                    );
+
+                    var booking = _bookingService.GetBookingById(bookingId);
+                    if (booking != null)
+                    {
+                        break;
+                    }
+                    Console.WriteLine($"Booking with ID {bookingId} was not found.");
+                    Thread.Sleep(1500);
+                }
+
+                var bookingToUpdate = _bookingService.GetBookingById(bookingId);
+                if (bookingToUpdate == null)
+                {
+                    Console.WriteLine($"No booking found with ID {bookingId}.");
+                    return;
+                }
+
+                Console.Clear();
+                DisplayBookingDetail(bookingId);
+                Console.WriteLine("Press any key to continue.");
+                Console.ReadKey();
+
+                var checkIn = CheckDate("Enter Check-In date (yyyy-MM-dd, type 'cancel' to abort): ", bookingToUpdate.CheckInDate);
+                Console.Clear();
+                DisplayBookingDetail(bookingId);
+
+                var checkOut = CheckDate("Enter Check-Out date (yyyy-MM-dd, type 'cancel' to abort): ", bookingToUpdate.CheckOutDate, previousDate: checkIn);
+                Console.Clear();
+                DisplayBookingDetail(bookingId);
+
+                var room = SelectRoom(checkIn, checkOut);
+                if (room == null)
+                {
+                    Console.WriteLine("No room selected. Update canceled.");
+                    return;
+                }
+
+                int extraBeds = 0;
+                if (room.Type.Equals("Double", StringComparison.OrdinalIgnoreCase) && room.SquareMeter > 15)
+                {
+                    extraBeds = InputHelper.GetInputWithValidation(
+                        "Room allows extra beds, up to 2 extra beds (type 'cancel' to abort): ",
+                        "Invalid input. Please enter a number between 0 and 2.",
+                        () => Console.WriteLine($"Room {room.RoomNumber} selected."),
+                        input =>
+                        {
+                            if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                                throw new OperationCanceledException("Update canceled by user.");
+                            return int.TryParse(input, out int num) && num >= 0 && num <= 2;
+                        },
+                        int.Parse
+                    );
+                }
+
+                _bookingService.UpdateBooking(bookingId, room.RoomId, checkIn, checkOut, extraBeds);
                 Console.WriteLine("Booking updated successfully.");
             }
-            catch (ArgumentException ex)
+            catch (OperationCanceledException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"Action canceled: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"Error updating booking: {ex.Message}");
             }
-            Thread.Sleep(2000);
+            finally
+            {
+                AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
+                Console.ReadKey();
+            }
         }
         private Customer SelectCustomer()
         {
@@ -357,7 +377,6 @@ namespace HotelAppDb.Controllers
                 {
                     Console.WriteLine("Date selection canceled. Please try again.");
                     Thread.Sleep(2000);
-                    
                 }
             }
         }
@@ -365,33 +384,45 @@ namespace HotelAppDb.Controllers
         {
             Console.Clear();
             int bookingId;
-            while (true)
-            {
-                bookingId = InputHelper.GetInputWithValidation(
-                "Enter ID of which booking to delete: ",
-                "Wrong input, choose correct ID.",
-                () => ViewBookings(),
-                input => int.TryParse(input, out _),
-                int.Parse
-                );
-                var bookingDelete = _bookingService.GetBookingById(bookingId);
-                if (bookingDelete != null)
-                {
-                    break;
-                }
-                Console.WriteLine($"Booking ID {bookingId} was not found.");
-                Thread.Sleep(1500);
-            }
-            if (!InputHelper.ConfirmAction("Are you sure you want to delete this Booking?"))
-            {
-                Console.WriteLine("Deletion canceled.");
-                return;
-            }
+
             try
             {
+                while (true)
+                {
+                    bookingId = InputHelper.GetInputWithValidation(
+                        "Enter ID of which booking to delete (or type 'Cancel' to abort): ",
+                        "Wrong input, choose a correct ID.",
+                        () => ViewBookings(),
+                        input =>
+                        {
+                            if (string.Equals(input, "cancel", StringComparison.OrdinalIgnoreCase))
+                                throw new OperationCanceledException("Deletion process canceled by the user.");
+                            return int.TryParse(input, out _);
+                        },
+                        int.Parse
+                    );
+
+                    var bookingDelete = _bookingService.GetBookingById(bookingId);
+                    if (bookingDelete != null)
+                    {
+                        break;
+                    }
+                    Console.WriteLine($"Booking ID {bookingId} was not found.");
+                    Thread.Sleep(1500);
+                }
+
+                if (!InputHelper.ConfirmAction("Are you sure you want to delete this Booking?"))
+                {
+                    Console.WriteLine("Deletion canceled.");
+                    return;
+                }
+
                 _bookingService.DeleteBooking(bookingId);
                 Console.WriteLine("Booking deleted successfully.");
-
+            }
+            catch (OperationCanceledException ex)
+            {
+                Console.WriteLine($"Operation canceled: {ex.Message}");
             }
             catch (ArgumentException ex)
             {
@@ -401,7 +432,12 @@ namespace HotelAppDb.Controllers
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
-            Thread.Sleep(2000);
+            finally
+            {
+                AnsiConsole.MarkupLine("[blue]Press any key to return to the menu...[/]");
+                Console.ReadKey();
+            }
+            
         }
     }
 }

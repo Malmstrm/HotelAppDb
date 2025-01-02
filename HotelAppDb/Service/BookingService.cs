@@ -32,14 +32,16 @@ namespace HotelAppDb.Service
             };
             _bookingRepository.Add(booking);
         }
-        public void UpdateBooking(int bookingId, int roomId, DateTime? checkIn = null, DateTime? checkOut = null)
+        public void UpdateBooking(int bookingId, int roomId, DateTime? checkIn = null, DateTime? checkOut = null, int? extraBeds = null)
         {
             var booking = _bookingRepository.GetById(bookingId);
             if (booking == null)
                 throw new ArgumentException($"No booking with that ID {bookingId}");
+            int extraBedsValue = extraBeds ?? 0;
             booking.RoomId = roomId;
             booking.CheckInDate = checkIn ?? booking.CheckInDate;
             booking.CheckOutDate = checkOut ?? booking.CheckOutDate;
+            booking.ExtraBeds = extraBedsValue;
 
             _bookingRepository.Update(booking);
         }

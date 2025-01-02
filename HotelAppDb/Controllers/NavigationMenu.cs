@@ -45,8 +45,6 @@ namespace HotelAppDb.Controllers
                         break;
                     case ConsoleKey.Enter:
                         return selectedIndex; // Returnera det valda alternativets index
-                    case ConsoleKey.Escape:
-                        return -1; // Avbryt
                 }
             }
         }

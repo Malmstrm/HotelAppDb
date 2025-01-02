@@ -13,7 +13,9 @@ namespace HotelAppDb.Repositories
             _dbContext = dbContext;
         }
 
-        public List<Customer> GetAll() => _dbContext.Customer.ToList();
+        public List<Customer> GetAll() => _dbContext.Customer
+            .OrderBy(c => c.CustomerId)
+            .ToList();
 
         public Customer? GetById(int customerId) => _dbContext.Customer.FirstOrDefault(c => c.CustomerId == customerId);
 

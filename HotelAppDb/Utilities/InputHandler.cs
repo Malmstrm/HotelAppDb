@@ -1,5 +1,7 @@
 ﻿
 
+using Spectre.Console;
+
 namespace HotelAppDb.Utilities
 {
     public class InputHandler
@@ -27,8 +29,15 @@ namespace HotelAppDb.Utilities
                 {
                     Console.Clear();
                     displayContext();
+                    AnsiConsole.MarkupLine("[Gray](Type 'Cancel' to abort)[/]");
                     Console.Write(prompt);
                     var input = Console.ReadLine();
+
+                    // Hantera avbrytning
+                    if (string.Equals(input, "Cancel", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new OperationCanceledException("Action was canceled by the user.");
+                    }
 
                     if (allowEmpty && string.IsNullOrWhiteSpace(input))
                     {
@@ -44,6 +53,7 @@ namespace HotelAppDb.Utilities
                     Thread.Sleep(2000);
                 }
             }
+
             public static bool IsValidRoomType(string input) =>
                 !string.IsNullOrWhiteSpace(input) &&
                 (input.Equals("Single", StringComparison.OrdinalIgnoreCase) ||

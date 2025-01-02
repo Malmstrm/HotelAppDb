@@ -10,9 +10,35 @@ namespace HotelAppDb.Data
             dbContext.Database.Migrate();
             SeedRooms(dbContext);
             SeedCustomers(dbContext);
+            //SeedBookings(dbContext); // Stim passerat datum 
             dbContext.SaveChanges();
         }
-        private void SeedRooms(ApplicationDbContext dbContext)
+        //private void SeedBookings(ApplicationDbContext dbContext)
+        //{
+        //    var customer1 = dbContext.Customer.FirstOrDefault(c => c.CustomerId == 1);
+        //    var customer2 = dbContext.Customer.FirstOrDefault(c => c.CustomerId == 2);
+        //    var room1 = dbContext.Room.FirstOrDefault(c => c.RoomId == 1);
+        //    var room2 = dbContext.Room.FirstOrDefault(c => c.RoomId == 2);
+        //    dbContext.Add(new Booking()
+        //    {
+        //        CustomerId = customer1.CustomerId,
+        //        RoomId = room1.RoomId,
+        //        CheckInDate = DateTime.Now.AddDays(-10),
+        //        CheckOutDate = DateTime.Now.AddDays(-8),
+
+
+        //    });
+        //    dbContext.Add(new Booking()
+        //    {
+        //        CustomerId = customer1.CustomerId,
+        //        RoomId = room1.RoomId,
+        //        CheckInDate = DateTime.Now.AddDays(-5),
+        //        CheckOutDate = DateTime.Now.AddDays(-1),
+
+
+        //    });
+        //}    
+            private void SeedRooms(ApplicationDbContext dbContext)
         {
             if (!dbContext.Room.Any(r => r.RoomNumber == 101))
             {
