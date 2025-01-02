@@ -23,5 +23,6 @@ namespace HotelAppDb.Data
                 optionsBuilder.UseSqlServer(@"Server=.;Database=HotelAppDb;Trusted_Connection=True;TrustServerCertificate=true;");
             }
         }
+       
     }
 }
