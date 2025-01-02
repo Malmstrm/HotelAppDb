@@ -10,35 +10,48 @@ namespace HotelAppDb.Data
             dbContext.Database.Migrate();
             SeedRooms(dbContext);
             SeedCustomers(dbContext);
-            //SeedBookings(dbContext); // Stim passerat datum 
+            SeedBookings(dbContext); 
             dbContext.SaveChanges();
         }
-        //private void SeedBookings(ApplicationDbContext dbContext)
-        //{
-        //    var customer1 = dbContext.Customer.FirstOrDefault(c => c.CustomerId == 1);
-        //    var customer2 = dbContext.Customer.FirstOrDefault(c => c.CustomerId == 2);
-        //    var room1 = dbContext.Room.FirstOrDefault(c => c.RoomId == 1);
-        //    var room2 = dbContext.Room.FirstOrDefault(c => c.RoomId == 2);
-        //    dbContext.Add(new Booking()
-        //    {
-        //        CustomerId = customer1.CustomerId,
-        //        RoomId = room1.RoomId,
-        //        CheckInDate = DateTime.Now.AddDays(-10),
-        //        CheckOutDate = DateTime.Now.AddDays(-8),
+        private void SeedBookings(ApplicationDbContext dbContext)
+        {
+            if (dbContext.Booking.Count() == 0)
+            {
+                var customer1 = dbContext.Customer.FirstOrDefault(c => c.CustomerId == 1);
+                var customer2 = dbContext.Customer.FirstOrDefault(c => c.CustomerId == 2);
+                var customer3 = dbContext.Customer.FirstOrDefault(c => c.CustomerId == 3);
+
+                var room1 = dbContext.Room.FirstOrDefault(c => c.RoomId == 1);
+                var room2 = dbContext.Room.FirstOrDefault(c => c.RoomId == 2);
+                var room3 = dbContext.Room.FirstOrDefault(c => c.RoomId == 3);
+
+                dbContext.Add(new Booking()
+                {
+                    CustomerId = customer1.CustomerId,
+                    RoomId = room1.RoomId,
+                    CheckInDate = DateTime.Now.AddDays(-10),
+                    CheckOutDate = DateTime.Now.AddDays(-8),
 
 
-        //    });
-        //    dbContext.Add(new Booking()
-        //    {
-        //        CustomerId = customer1.CustomerId,
-        //        RoomId = room1.RoomId,
-        //        CheckInDate = DateTime.Now.AddDays(-5),
-        //        CheckOutDate = DateTime.Now.AddDays(-1),
+                });
+                dbContext.Add(new Booking()
+                {
+                    CustomerId = customer2.CustomerId,
+                    RoomId = room2.RoomId,
+                    CheckInDate = DateTime.Now.AddDays(-5),
+                    CheckOutDate = DateTime.Now.AddDays(-1),
+                });
+                dbContext.Add(new Booking()
+                {
+                    CustomerId = customer3.CustomerId,
+                    RoomId = room3.RoomId,
+                    CheckInDate = DateTime.Now.AddDays(1),
+                    CheckOutDate = DateTime.Now.AddDays(4),
+                });
 
-
-        //    });
-        //}    
-            private void SeedRooms(ApplicationDbContext dbContext)
+            }
+        }
+        private void SeedRooms(ApplicationDbContext dbContext)
         {
             if (!dbContext.Room.Any(r => r.RoomNumber == 101))
             {
