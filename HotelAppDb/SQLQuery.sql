@@ -1,8 +1,3 @@
-# HotelAppDb
-
-
-
-# Syntax
 SELECT * 
 FROM Customer;
 
