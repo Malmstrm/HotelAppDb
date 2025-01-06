@@ -1,6 +1,6 @@
 # HotelAppDb
 
-
+Eftersom blivit ändring så jag har tagit bort dem "satta" bokningara ifrån starten så kommer inte Syntaxen MSSQL att visa något om man inte skapat bokning själv i appen.
 
 # Syntax
 SELECT * 
